@@ -1,0 +1,60 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: onyxpay-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  postgres-payment-requests:
+    image: postgres:17
+    container_name: onyxpay-payment-requests-db
+    environment:
+      POSTGRES_DB: payment_requests_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - payment_requests_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+
+  postgres-transactions:
+    image: postgres:17
+    container_name: onyxpay-transactions-db
+    environment:
+      POSTGRES_DB: transactions_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - transactions_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+
+  postgres-webhooks:
+    image: postgres:17
+    container_name: onyxpay-webhooks-db
+    environment:
+      POSTGRES_DB: webhook_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - webhooks_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+
+  mock-bank-service:
+    build: ../mock-bank-service
+    container_name: onyxpay-mock-bank-service
+    ports:
+      - "8001:8000"
+
+volumes:
+  payment_requests_data:
+  transactions_data:
+  webhooks_data:
