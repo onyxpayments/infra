@@ -33,14 +33,18 @@ services:
       - ./db/init:/docker-entrypoint-initdb.d
 
   mock-bank-service:
-    image: ghcr.io/rodrigueezj/mock-bank-service:latest
+    image: ghcr.io/onyxpayments/mock-bank-service:latest
     ports:
       - "8001:8000"
 
   payment-orchestator-service:
-    image: ghcr.io/rodrigueezj/payment-orchestator-service:latest
+    image: ghcr.io/onyxpayments/payment-orchestrator-service:latest
     ports:
       - "8002:8001"
+    environment:
+      MOCK_BANK_BASE_URL: http://mock-bank-service:8000
+    depends_on:
+      - mock-bank-service
 
 volumes:
   transactions_data:
