@@ -1,4 +1,48 @@
 services:
+  mock-bank-service:
+    image: ghcr.io/onyxpayments/mock-bank-service:latest
+    ports:
+      - "8001:8000"
+
+  payment-orchestrator-service:
+    image: ghcr.io/onyxpayments/payment-orchestrator-service:latest
+    ports:
+      - "8002:8001"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      BANK_URL: ${BANK_URL}
+    depends_on:
+      - mock-bank-service
+      - orchestrator-db
+
+  orchestrator-db:
+    image: postgres:17
+    ports:
+      - "5433:5432"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - transactions_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+
+  # postgres-webhooks:
+  #   image: postgres:17
+  #   environment:
+  #     POSTGRES_DB: webhook_db
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: postgres
+  #   ports:
+  #     - "5435:5432"
+  #   volumes:
+  #     - webhooks_data:/var/lib/postgresql/data
+  #     - ./db/init:/docker-entrypoint-initdb.d
+
   rabbitmq:
     image: rabbitmq:3-management
     environment:
@@ -7,44 +51,6 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
-
-  postgres-transactions:
-    image: postgres:17
-    environment:
-      POSTGRES_DB: transactions_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5434:5432"
-    volumes:
-      - transactions_data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d
-
-  postgres-webhooks:
-    image: postgres:17
-    environment:
-      POSTGRES_DB: webhook_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-    ports:
-      - "5435:5432"
-    volumes:
-      - webhooks_data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d
-
-  mock-bank-service:
-    image: ghcr.io/onyxpayments/mock-bank-service:latest
-    ports:
-      - "8001:8000"
-
-  payment-orchestator-service:
-    image: ghcr.io/onyxpayments/payment-orchestrator-service:latest
-    ports:
-      - "8002:8001"
-    environment:
-      MOCK_BANK_BASE_URL: http://mock-bank-service:8000
-    depends_on:
-      - mock-bank-service
 
 volumes:
   transactions_data:

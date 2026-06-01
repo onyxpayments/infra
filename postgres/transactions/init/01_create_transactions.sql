@@ -1,17 +1,37 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE TYPE payment_status AS ENUM (
+    'PENDING',
+    'APPROVED',
+    'DECLINED',
+    'ERROR',
+    'EXPIRED'
+    );
+
 CREATE TABLE transactions (
-    id BIGSERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
-    transaction_id UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
+    tracking_id VARCHAR(100),
 
-    merchant_id VARCHAR(64) NOT NULL,
+    notification_url TEXT,
+
+    -- provider_transaction_id VARCHAR(100),
+    -- provider_reference VARCHAR(100),
 
     amount NUMERIC(18,2) NOT NULL,
-    currency CHAR(3) NOT NULL,
+    -- currency VARCHAR(3) NOT NULL,
 
-    status VARCHAR(32) NOT NULL,
+    status payment_status NOT NULL DEFAULT 'PENDING',
+    error_code VARCHAR(100),
+    error_message TEXT,
 
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    customer_first_name VARCHAR(100) NOT NULL,
+    customer_last_name VARCHAR(100) NOT NULL,
+    customer_personal_id VARCHAR(50) NOT NULL,
+    customer_email VARCHAR(255) NOT NULL,
+    customer_country VARCHAR(2) NOT NULL,
+    customer_ip INET NOT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
