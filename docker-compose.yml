@@ -12,7 +12,7 @@ services:
       - .env
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      BANK_URL: ${BANK_URL}
+      BANK_SERVICE_URL: ${BANK_SERVICE_URL}
     depends_on:
       - mock-bank-service
       - orchestrator-db
@@ -29,8 +29,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - transactions_data:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d
-
+      - ./postgres/transactions/init:/docker-entrypoint-initdb.d
   # postgres-webhooks:
   #   image: postgres:17
   #   environment:
