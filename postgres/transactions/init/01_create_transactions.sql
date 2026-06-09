@@ -1,7 +1,7 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TYPE payment_status AS ENUM (
-    'PENDING',
+    'NEW','PENDING',
     'APPROVED',
     'DECLINED',
     'ERROR',
@@ -21,7 +21,7 @@ CREATE TABLE transactions (
     amount NUMERIC(18,2) NOT NULL,
     -- currency VARCHAR(3) NOT NULL,
 
-    status payment_status NOT NULL DEFAULT 'PENDING',
+    status payment_status NOT NULL DEFAULT 'NEW',
     error_code VARCHAR(100),
     error_message TEXT,
 
