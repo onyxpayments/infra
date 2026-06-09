@@ -30,17 +30,6 @@ services:
     volumes:
       - transactions_data:/var/lib/postgresql/data
       - ./postgres/transactions/init:/docker-entrypoint-initdb.d
-  # postgres-webhooks:
-  #   image: postgres:17
-  #   environment:
-  #     POSTGRES_DB: webhook_db
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: postgres
-  #   ports:
-  #     - "5435:5432"
-  #   volumes:
-  #     - webhooks_data:/var/lib/postgresql/data
-  #     - ./db/init:/docker-entrypoint-initdb.d
 
   rabbitmq:
     image: rabbitmq:3-management
