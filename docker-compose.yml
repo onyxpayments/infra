@@ -17,6 +17,13 @@ services:
       - mock-bank-service
       - orchestrator-db
 
+  api-gateway:
+    image: ghcr.io/onyxpayments/api-gateway:latest
+    ports:
+      - "8003:8002"
+    env_file:
+      - .env
+
   orchestrator-db:
     image: postgres:17
     ports:
