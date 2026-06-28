@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: OnyxPay Transactions
+    uid: onyxpay-transactions-db
+    type: postgres
+    access: proxy
+    url: orchestrator-db:5432
+    user: $POSTGRES_USER
+    editable: false
+    jsonData:
+      database: $POSTGRES_DB
+      sslmode: disable
+      postgresVersion: 1700
+      timescaledb: false
+    secureJsonData:
+      password: $POSTGRES_PASSWORD
+

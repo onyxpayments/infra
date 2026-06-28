@@ -58,12 +58,15 @@ services:
     image: grafana/grafana:latest
     ports:
       - "3000:3000"
+    env_file:
+      - .env
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
     depends_on:
       - loki
+      - orchestrator-db
 
   loki:
     image: grafana/loki:3.7.0

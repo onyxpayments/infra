@@ -42,3 +42,19 @@ Docker y envía sus logs a Loki. Grafana tiene el datasource y el dashboard
 
 La interfaz de diagnóstico de Alloy está disponible en
 `http://localhost:12345`.
+
+## Transaction dashboard
+
+Grafana connects directly to the orchestrator PostgreSQL database through the
+provisioned `OnyxPay Transactions` datasource. The
+`OnyxPay · Transactions` dashboard includes:
+
+- Total transactions.
+- Pending transactions (`NEW` and `PENDING`).
+- Transactions in `ERROR`.
+- Completed transactions (`APPROVED`, `DECLINED`, and `EXPIRED`).
+- A stacked histogram grouped by transaction status.
+
+Open **Dashboards → OnyxPay → OnyxPay · Transactions**. The summary counters
+cover all stored transactions, while the histogram follows Grafana's selected
+time range.
