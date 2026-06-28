@@ -24,6 +24,13 @@ services:
     env_file:
       - .env
 
+  payment-frontend:
+    image: ghcr.io/onyxpayments/payment-frontend:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-gateway
+
   orchestrator-db:
     image: postgres:17
     ports:
@@ -47,6 +54,45 @@ services:
       - "5672:5672"
       - "15672:15672"
 
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - loki
+
+  loki:
+    image: grafana/loki:3.7.0
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yml
+    volumes:
+      - ./observability/loki-config.yml:/etc/loki/local-config.yml:ro
+      - loki_data:/loki
+
+  alloy:
+    image: grafana/alloy:latest
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    ports:
+      - "12345:12345"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./observability/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on:
+      - loki
+
 volumes:
   transactions_data:
   webhooks_data:
+  grafana_data:
+  loki_data:
+  alloy_data:
