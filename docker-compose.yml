@@ -123,6 +123,9 @@ services:
       - .env
     environment:
       PAYMENT_REQUEST_SERVICE_URL: http://payment-request-service:8003
+      API_BASIC_AUTH_ENABLED: ${API_BASIC_AUTH_ENABLED:-true}
+      API_BASIC_AUTH_USERNAME: ${API_BASIC_AUTH_USERNAME:?API_BASIC_AUTH_USERNAME is required}
+      API_BASIC_AUTH_SECRET: ${API_BASIC_AUTH_SECRET:?API_BASIC_AUTH_SECRET is required}
     depends_on:
       payment-request-service:
         condition: service_healthy
