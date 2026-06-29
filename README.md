@@ -45,6 +45,15 @@ The Compose file requires valid values for PostgreSQL, RabbitMQ,
 `DATABASE_URL`, and `BANK_SERVICE_URL`. The service repositories document their
 complete optional settings.
 
+For local Compose runs, `infra/.env` is the source of runtime configuration.
+Compose injects that file into the containers; service-local `.env` files are
+only used when a service is launched directly from its own repository. The
+orchestrator image explicitly excludes `.env` from its build context.
+
+The local `.env` file is intentionally ignored by Git. It is convenient for
+development, but production deployments should inject only the secrets each
+service needs from a dedicated secret manager.
+
 At minimum, the resolved `.env` must provide values equivalent to:
 
 ```dotenv
@@ -111,6 +120,10 @@ Nginx → API Gateway → Payment Request Service
 
 `notification_url` is required by the public payment contract and stored as a
 non-nullable transaction field.
+
+The Mock Bank development distribution produces approximately 30% approved,
+15% declined, 25% error, and 30% pending transactions. Override its six
+scenario probability variables in `.env` when a different test mix is needed.
 
 ## Process model
 
