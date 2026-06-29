@@ -16,6 +16,17 @@ services:
       retries: 5
       start_period: 10s
 
+  payment-orchestrator-migrations:
+    image: ghcr.io/onyxpayments/payment-orchestrator-service:latest
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      orchestrator-db:
+        condition: service_healthy
+
   payment-orchestrator-service:
     image: ghcr.io/onyxpayments/payment-orchestrator-service:latest
     ports:
@@ -25,10 +36,13 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       BANK_SERVICE_URL: ${BANK_SERVICE_URL}
+      RABBITMQ_HOST: rabbitmq
     depends_on:
       mock-bank-service:
         condition: service_healthy
-      orchestrator-db:
+      payment-orchestrator-migrations:
+        condition: service_completed_successfully
+      rabbitmq:
         condition: service_healthy
     healthcheck:
       test:
@@ -38,6 +52,29 @@ services:
         - import urllib.request; urllib.request.urlopen('http://localhost:8001/health/ready', timeout=2)
       interval: 10s
       timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  payment-orchestrator-worker:
+    image: ghcr.io/onyxpayments/payment-orchestrator-service:latest
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      BANK_SERVICE_URL: ${BANK_SERVICE_URL}
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      mock-bank-service:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payment-orchestrator-migrations:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.worker_health"]
+      interval: 10s
+      timeout: 8s
       retries: 5
       start_period: 15s
 
@@ -58,6 +95,23 @@ services:
         - import urllib.request; urllib.request.urlopen('http://localhost:8003/health/ready', timeout=2)
       interval: 10s
       timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  webhook-service:
+    image: ghcr.io/onyxpayments/webhook-service:latest
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - .env
+    environment:
+      RABBITMQ_HOST: rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.worker_health"]
+      interval: 10s
+      timeout: 8s
       retries: 5
       start_period: 10s
 

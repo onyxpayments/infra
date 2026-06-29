@@ -48,7 +48,7 @@
       "type": "logs"
     }
   ],
-  "refresh": "5s",
+  "refresh": "",
   "schemaVersion": 39,
   "tags": [
     "onyxpay",

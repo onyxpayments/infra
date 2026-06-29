@@ -28,6 +28,21 @@ en `http://localhost:8004`. Este servicio publica eventos
 `orchestrator.payment-requested.q` hasta que el consumidor del orquestador las
 procese.
 
+El orquestador se despliega como tres procesos coordinados:
+
+- `payment-orchestrator-migrations` aplica las migraciones y termina.
+- `payment-orchestrator-service` expone callbacks y health HTTP.
+- `payment-orchestrator-worker` consume RabbitMQ, procesa pagos y hace ACK
+  después del commit.
+
+Los errores transitorios pasan por una cola de retry y los mensajes inválidos o
+agotados terminan en `orchestrator.payment-requested.dlq`.
+
+Cuando el Mock Bank envía el callback final, el orquestador publica
+`payment.notification.requested.v1`. `webhook-service` consume
+`webhook.payment-notifications.q`, entrega el estado a la `notification_url`
+obligatoria del cliente y usa colas de retry y DLQ para los fallos.
+
 Para ver el estado y los logs:
 
 ```bash

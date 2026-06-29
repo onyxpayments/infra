@@ -40,7 +40,7 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "Completed"
+              "options": "Approved"
             },
             "properties": [
               {
@@ -114,7 +114,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*)::double precision AS \"Total\", COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'EXPIRED'))::double precision AS \"Completed\", COUNT(*) FILTER (WHERE status = 'ERROR')::double precision AS \"Errors\", COUNT(*) FILTER (WHERE status IN ('NEW', 'PENDING'))::double precision AS \"Pending\" FROM transactions;",
+          "rawSql": "SELECT COUNT(*)::double precision AS \"Total\", COUNT(*) FILTER (WHERE status = 'APPROVED')::double precision AS \"Approved\", COUNT(*) FILTER (WHERE status = 'ERROR')::double precision AS \"Errors\", COUNT(*) FILTER (WHERE status IN ('NEW', 'PENDING'))::double precision AS \"Pending\" FROM transactions WHERE $__timeFilter(created_at);",
           "refId": "A"
         }
       ],
@@ -182,7 +182,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status = 'APPROVED') / NULLIF(COUNT(*), 0), 0)::double precision AS \"Approval rate\" FROM transactions WHERE status NOT IN ('NEW', 'PENDING');",
+          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status = 'APPROVED') / NULLIF(COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'ERROR', 'EXPIRED')), 0), 0)::double precision AS \"Approval rate\" FROM transactions WHERE $__timeFilter(created_at);",
           "refId": "A"
         }
       ],
@@ -232,7 +232,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(SUM(amount), 0)::double precision AS \"Total amount\" FROM transactions WHERE status = 'APPROVED';",
+          "rawSql": "SELECT COALESCE(SUM(amount), 0)::double precision AS \"Total amount\" FROM transactions WHERE status = 'APPROVED' AND $__timeFilter(created_at);",
           "refId": "A"
         }
       ],
@@ -282,7 +282,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(AVG(amount), 0)::double precision AS \"Average amount\" FROM transactions;",
+          "rawSql": "SELECT COALESCE(AVG(amount), 0)::double precision AS \"Average amount\" FROM transactions WHERE $__timeFilter(created_at);",
           "refId": "A"
         }
       ],
@@ -332,7 +332,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))), 0)::double precision AS \"Average processing time\" FROM transactions WHERE status IN ('APPROVED', 'DECLINED', 'ERROR', 'EXPIRED');",
+          "rawSql": "SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (updated_at - created_at))), 0)::double precision AS \"Average processing time\" FROM transactions WHERE status IN ('APPROVED', 'DECLINED', 'ERROR', 'EXPIRED') AND $__timeFilter(created_at);",
           "refId": "A"
         }
       ],
@@ -438,7 +438,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COUNT(*) FILTER (WHERE status = 'APPROVED')::double precision AS \"Approved\", COUNT(*) FILTER (WHERE status IN ('NEW', 'PENDING'))::double precision AS \"Pending\", COUNT(*) FILTER (WHERE status = 'DECLINED')::double precision AS \"Declined\", COUNT(*) FILTER (WHERE status = 'ERROR')::double precision AS \"Errors\", COUNT(*) FILTER (WHERE status = 'EXPIRED')::double precision AS \"Expired\" FROM transactions;",
+          "rawSql": "SELECT COUNT(*) FILTER (WHERE status = 'APPROVED')::double precision AS \"Approved\", COUNT(*) FILTER (WHERE status IN ('NEW', 'PENDING'))::double precision AS \"Pending\", COUNT(*) FILTER (WHERE status = 'DECLINED')::double precision AS \"Declined\", COUNT(*) FILTER (WHERE status = 'ERROR')::double precision AS \"Errors\", COUNT(*) FILTER (WHERE status = 'EXPIRED')::double precision AS \"Expired\" FROM transactions WHERE $__timeFilter(created_at);",
           "refId": "A"
         }
       ],
@@ -460,7 +460,8 @@
             "drawStyle": "line",
             "fillOpacity": 18,
             "lineWidth": 2,
-            "showPoints": "never",
+            "pointSize": 7,
+            "showPoints": "always",
             "spanNulls": true
           },
           "decimals": 0
@@ -493,7 +494,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(created_at, '5m'), COUNT(*)::double precision AS \"Created\" FROM transactions WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1;",
+          "rawSql": "SELECT created_at AS \"time\", 1::double precision AS \"Created\" FROM transactions WHERE $__timeFilter(created_at) ORDER BY created_at;",
           "refId": "A"
         }
       ],
@@ -515,7 +516,8 @@
             "drawStyle": "line",
             "fillOpacity": 18,
             "lineWidth": 2,
-            "showPoints": "never",
+            "pointSize": 7,
+            "showPoints": "always",
             "spanNulls": true
           },
           "decimals": 0
@@ -548,7 +550,7 @@
           "editorMode": "code",
           "format": "time_series",
           "rawQuery": true,
-          "rawSql": "SELECT $__timeGroupAlias(updated_at, '5m'), COUNT(*)::double precision AS \"Approved\" FROM transactions WHERE status = 'APPROVED' AND $__timeFilter(updated_at) GROUP BY 1 ORDER BY 1;",
+          "rawSql": "SELECT updated_at AS \"time\", 1::double precision AS \"Approved\" FROM transactions WHERE status = 'APPROVED' AND $__timeFilter(updated_at) ORDER BY updated_at;",
           "refId": "A"
         }
       ],
@@ -616,7 +618,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'EXPIRED')) / NULLIF(COUNT(*), 0), 0)::double precision AS \"Last 15 min\" FROM transactions WHERE created_at >= NOW() - INTERVAL '15 minutes';",
+          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status = 'APPROVED') / NULLIF(COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'ERROR', 'EXPIRED')), 0), 0)::double precision AS \"Last 15 min\" FROM transactions WHERE created_at >= NOW() - INTERVAL '15 minutes';",
           "refId": "A"
         },
         {
@@ -624,7 +626,7 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'EXPIRED')) / NULLIF(COUNT(*), 0), 0)::double precision AS \"Last 30 min\" FROM transactions WHERE created_at >= NOW() - INTERVAL '30 minutes';",
+          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status = 'APPROVED') / NULLIF(COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'ERROR', 'EXPIRED')), 0), 0)::double precision AS \"Last 30 min\" FROM transactions WHERE created_at >= NOW() - INTERVAL '30 minutes';",
           "refId": "B"
         },
         {
@@ -632,11 +634,11 @@
           "format": "table",
           "hide": false,
           "rawQuery": true,
-          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'EXPIRED')) / NULLIF(COUNT(*), 0), 0)::double precision AS \"Last 1 hour\" FROM transactions WHERE created_at >= NOW() - INTERVAL '1 hour';",
+          "rawSql": "SELECT COALESCE(100.0 * COUNT(*) FILTER (WHERE status = 'APPROVED') / NULLIF(COUNT(*) FILTER (WHERE status IN ('APPROVED', 'DECLINED', 'ERROR', 'EXPIRED')), 0), 0)::double precision AS \"Last 1 hour\" FROM transactions WHERE created_at >= NOW() - INTERVAL '1 hour';",
           "refId": "C"
         }
       ],
-      "title": "Completion rate",
+      "title": "Approval rate by window",
       "type": "gauge"
     },
     {

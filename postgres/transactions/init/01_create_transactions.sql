@@ -13,7 +13,7 @@ CREATE TABLE transactions (
 
     tracking_id VARCHAR(100),
 
-    notification_url TEXT,
+    notification_url TEXT NOT NULL,
 
     provider_transaction_id VARCHAR(100) UNIQUE,
     -- provider_reference VARCHAR(100),
