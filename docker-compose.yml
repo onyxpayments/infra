@@ -3,6 +3,18 @@ services:
     image: ghcr.io/onyxpayments/mock-bank-service:latest
     ports:
       - "8001:8000"
+    env_file:
+      - .env
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   payment-orchestrator-service:
     image: ghcr.io/onyxpayments/payment-orchestrator-service:latest
@@ -14,8 +26,40 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       BANK_SERVICE_URL: ${BANK_SERVICE_URL}
     depends_on:
-      - mock-bank-service
-      - orchestrator-db
+      mock-bank-service:
+        condition: service_healthy
+      orchestrator-db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8001/health/ready', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
+
+  payment-request-service:
+    image: ghcr.io/onyxpayments/payment-request-service:latest
+    ports:
+      - "8004:8003"
+    env_file:
+      - .env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8003/health/ready', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   api-gateway:
     image: ghcr.io/onyxpayments/api-gateway:latest
@@ -23,13 +67,40 @@ services:
       - "8003:8002"
     env_file:
       - .env
+    environment:
+      PAYMENT_REQUEST_SERVICE_URL: http://payment-request-service:8003
+    depends_on:
+      payment-request-service:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8002/health/ready', timeout=2)
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   payment-frontend:
     image: ghcr.io/onyxpayments/payment-frontend:latest
     ports:
       - "8080:80"
     depends_on:
-      - api-gateway
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --quiet
+        - --output-document=/dev/null
+        - http://localhost/health/ready
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
   orchestrator-db:
     image: postgres:17
@@ -44,15 +115,30 @@ services:
     volumes:
       - transactions_data:/var/lib/postgresql/data
       - ./postgres/transactions/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   rabbitmq:
     image: rabbitmq:3-management
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"     # conexión de aplicaciones
+      - "15672:15672"   # interfaz web
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   grafana:
     image: grafana/grafana:latest
@@ -95,6 +181,7 @@ services:
 
 volumes:
   transactions_data:
+  rabbitmq_data:
   webhooks_data:
   grafana_data:
   loki_data:

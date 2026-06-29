@@ -15,11 +15,11 @@ CREATE TABLE transactions (
 
     notification_url TEXT,
 
-    -- provider_transaction_id VARCHAR(100),
+    provider_transaction_id VARCHAR(100) UNIQUE,
     -- provider_reference VARCHAR(100),
 
     amount NUMERIC(18,2) NOT NULL,
-    -- currency VARCHAR(3) NOT NULL,
+    currency VARCHAR(3) NOT NULL,
 
     status payment_status NOT NULL DEFAULT 'NEW',
     error_code VARCHAR(100),

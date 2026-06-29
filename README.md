@@ -22,6 +22,12 @@ docker compose up -d
 El frontend queda disponible en `http://localhost:8080` y envía `/api/payments`
 al API Gateway mediante el proxy incluido en su contenedor Nginx.
 
+El API Gateway reenvía las solicitudes al Payment Request Service, disponible
+en `http://localhost:8004`. Este servicio publica eventos
+`payment.requested.v1` en RabbitMQ; las solicitudes quedan en
+`orchestrator.payment-requested.q` hasta que el consumidor del orquestador las
+procese.
+
 Para ver el estado y los logs:
 
 ```bash
